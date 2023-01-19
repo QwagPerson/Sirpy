@@ -5,10 +5,10 @@ from typing import Any
 
 
 class SIR(AbstractModel):
-    def __init__(self, name: str, hyper_params: dict, target_params: dict, static_params: dict, *args: Any,
+    def __init__(self, name: str, hyper_params: dict, train_params: dict, static_params: dict, *args: Any,
                  **kwargs: Any) -> None:
         # Let's create the states
-        super().__init__(name, hyper_params, target_params, static_params, *args, **kwargs)
+        super().__init__(name, hyper_params, train_params, static_params, *args, **kwargs)
 
         self.add_state(State("S"))
         self.add_state(State("I"))
