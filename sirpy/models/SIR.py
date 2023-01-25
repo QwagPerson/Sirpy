@@ -1,4 +1,4 @@
-from abstractModel import AbstractModel, State, Transition
+from sirpy.models.abstractModel import AbstractModel, State, Transition
 from typing import Any
 
 
@@ -11,14 +11,15 @@ class SIR(AbstractModel):
         self.add_states([State("S"), State("I"), State("R")])
 
         # Now the transitions
+        # Lambdas of the transition are functions of t,y,p -> ndarray
         self.add_transition(
             Transition(r"$\beta SI$", "S", "I",
-                       lambda y, _: self.p("beta") * y["S"] * y["I"]
+                       lambda _, y, p: p.beta * y.S * y.I
                        )
         )
 
         self.add_transition(
             Transition(r"$\gamma I$", "I", "R",
-                       lambda y, _: self.p("gamma") * y["I"]
+                       lambda _, y, p: p.gamma * y.I
                        )
         )

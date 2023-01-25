@@ -7,18 +7,7 @@ from scipy.optimize import least_squares
 from scipy.integrate import solve_ivp
 from abstractModel import AbstractModel
 import pandas as pd
-
-# define a lambda function that takes y, t and return 0 and assing it to a variable named null_lambda
-null_lambda = lambda y, t: 0
-
-# make a function that takes two lambda functions and add em togheher
-def add_functions(f1, f2):
-    return lambda y, t: f1(y, t) + f2(y, t)
-
-
-# make a function that takes a list of lambda functions and difference em togheher
-def difference_functions(f1, f2):
-    return lambda y, t: f1(y, t) - f2(y, t)
+from sirpy.utils.attrDict import AttrDict
 
 
 def simple_residual_fun(x, trainer):
@@ -37,7 +26,16 @@ class LeastSquaresTrainer(AbstractTrainer):
                  ) -> None:
         super().__init__(model, *args, **kwargs)
         self.residual_fun = simple_residual_fun if residual_fun is None else residual_fun
-        self.lambda_dict = None
+        self.param_attr_dict = AttrDict(
+            **self.model.train_params,
+            **self.model.static_params
+        )
+
+    def update_param_attr_dict(self):
+        self.param_attr_dict = AttrDict(
+            **self.model.train_params,
+            **self.model.static_params
+        )
 
     def train(self, **kwargs: Any):
         self.results = least_squares(
@@ -49,28 +47,15 @@ class LeastSquaresTrainer(AbstractTrainer):
         self.model.trained = True
         return self.results
 
-    def compute_lamda_dict(self):
-        self.lambda_dict = {i: null_lambda for i in self.model.states.keys()}
-        for i, transition in enumerate(self.model.transitions):
-            self.lambda_dict[transition.left] = difference_functions(
-                self.lambda_dict[transition.left],
-                transition.fun
-            )
-            self.lambda_dict[transition.right] = add_functions(
-                self.lambda_dict[transition.right],
-                transition.fun
-            )
-
     # Asume que y está ordenado según el orden de states
     def compute_gradients(self, t, y):
-        if self.lambda_dict is None:
-            self.compute_lamda_dict()
+        self.update_param_attr_dict()
         # if array is 1D, make it 2D
         if len(y.shape) == 1:
             y = y.reshape(-1, 1)
-        y = {i: y[j, :] for j, i in enumerate(self.model.states.keys())}
+        y = AttrDict(**{i: y[j, :] for j, i in enumerate(self.model.states.keys())})
         lambda_vector = self.lambda_dict.values()
-        gradient = [f(y, t) for f in lambda_vector]
+        gradient = [f(t, y, self.param_attr_dict) for f in lambda_vector]
         # make array from gradient
         gradient = np.array(gradient)
         return gradient
@@ -81,12 +66,10 @@ class LeastSquaresTrainer(AbstractTrainer):
             self.model.get_param("time_space"),
             self.model.get_param("initial_condition"),
             vectorized=True,
-            t_eval = self.model.get_param("time_range"),
+            t_eval=self.model.get_param("time_range"),
             **kwargs
         )
 
     def calculate_curves(self):
         return self.solve_ode_system().y.T
 
-    def plot_curves(self):
-        return pd.DataFrame(self.calculate_curves(), columns=list(self.model.states.keys())).plot()

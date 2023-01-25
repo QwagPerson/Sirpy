@@ -3,7 +3,6 @@ from typing import Any, Callable
 import networkx as nx
 import numpy as np
 from matplotlib.axes import Axes
-from sirpy.parameter.SimpleParameter import SimpleParameter
 
 
 class State:
@@ -12,11 +11,12 @@ class State:
 
 
 class Transition:
-    def __init__(self, name: str, left: str, right: str, fun: Callable) -> None:
+    def __init__(self, name: str, left: str, right: str, fun: Callable, symmetrical: bool = True) -> None:
         self.name = name
         self.left = left
         self.right = right
         self.fun = fun
+        self.symmetrical = symmetrical
 
 
 class AbstractModel(ABC):
@@ -39,14 +39,6 @@ class AbstractModel(ABC):
         self.shapes = None
         self.sizes = None
         self.save_shapes_and_sizes_of_train_params()
-
-    def make_params_object(self):
-        for key, value in self.train_params.items():
-            if isinstance(value, float):
-                self.train_params[key] = SimpleParameter(key, value)
-        for key, value in self.static_params.items():
-            if isinstance(value, float):
-                self.static_params[key] = SimpleParameter(key, value)
 
     def get_param(self, name):
         if name in self.hyper_params.keys():

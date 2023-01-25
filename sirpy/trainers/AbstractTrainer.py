@@ -2,15 +2,16 @@ from abc import ABC, abstractmethod
 from typing import Any
 import pandas as pd
 from matplotlib import pyplot as plt
-
-from abstractModel import AbstractModel
+from sirpy.utils.lambdaUtils import null_lambda, add_functions, difference_functions
+from sirpy.models.abstractModel import AbstractModel
 
 
 class AbstractTrainer(ABC):
     def __init__(self, model: AbstractModel, *args: Any, **kwargs: Any) -> None:
         self.model = model
         self.results = None
-        pass
+        self.lambda_dict = None
+        self.compute_lamda_dict()
 
     @abstractmethod
     def train(self, **kwargs: Any):
@@ -23,6 +24,20 @@ class AbstractTrainer(ABC):
     @abstractmethod
     def calculate_curves(self):
         ...
+
+    def compute_lamda_dict(self):
+        self.lambda_dict = {i: null_lambda for i in self.model.states.keys()}
+        for i, transition in enumerate(self.model.transitions):
+            self.lambda_dict[transition.left] = difference_functions(
+                self.lambda_dict[transition.left],
+                transition.fun
+            )
+            # if transition is symmetrical add right else pass
+            if transition.symmetrical:
+                self.lambda_dict[transition.right] = add_functions(
+                    self.lambda_dict[transition.right],
+                    transition.fun
+                )
 
     def plot_curves(self):
         return pd.DataFrame(self.calculate_curves(), columns=list(self.model.states.keys())).plot()
@@ -49,3 +64,9 @@ class AbstractTrainer(ABC):
             train_data.iloc[:, i].plot(ax=ax, label="train_data")
             ax.set_title(f"State {i} - {col_name}")
             ax.legend()
+
+        # make invisible every ax not used
+        for i in range(n_states, axes.size):
+            axes.flatten()[i].set_visible(False)
+
+
