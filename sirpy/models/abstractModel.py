@@ -1,5 +1,6 @@
 from abc import ABC
 from typing import Any, Callable
+
 import networkx as nx
 import numpy as np
 from matplotlib.axes import Axes
@@ -76,7 +77,7 @@ class AbstractModel(ABC):
             if isinstance(value, list):
                 shapes.append(len(value))
                 sizes.append(len(value))
-            elif isinstance(value, float):
+            elif isinstance(value, float) or isinstance(value, int):
                 shapes.append(1)
                 sizes.append(1)
             else:
@@ -91,7 +92,7 @@ class AbstractModel(ABC):
         for key, value in self.train_params.items():
             if isinstance(value, list):
                 params += value
-            elif isinstance(value, float):
+            elif isinstance(value, float) or isinstance(value, int):
                 params.append(value)
             else:
                 params += value.flatten().tolist()
