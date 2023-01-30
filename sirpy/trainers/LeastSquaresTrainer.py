@@ -1,20 +1,12 @@
 from typing import Any, Callable
 
 import numpy as np
+from scipy.integrate import solve_ivp
+from scipy.optimize import least_squares
 
 from AbstractTrainer import AbstractTrainer
-from scipy.optimize import least_squares
-from scipy.integrate import solve_ivp
 from abstractModel import AbstractModel
-import pandas as pd
 from sirpy.utils.attrDict import AttrDict
-
-
-def simple_residual_fun(x, trainer):
-    trainer.model.set_train_params_from_list(x)
-    y_pred = trainer.calculate_curves()
-    diff = trainer.model.train_data - y_pred
-    return diff.flatten()
 
 
 class LeastSquaresTrainer(AbstractTrainer):
@@ -73,3 +65,42 @@ class LeastSquaresTrainer(AbstractTrainer):
     def calculate_curves(self):
         return self.solve_ode_system().y.T
 
+    def calculate_test_curves(self, **kwargs) -> np.ndarray:
+        return solve_ivp(
+            self.compute_gradients,
+            self.model.get_param("test_time_space"),
+            self.solve_ode_system().y.T[-1],
+            vectorized=True,
+            t_eval=self.model.get_param("test_time_range"),
+            **kwargs
+        ).y.T
+
+def simple_residual_fun(x: np.ndarray, trainer: LeastSquaresTrainer):
+    """
+    Objetive function for least squares method. It is used to train the model.
+    It is a simple residual function that calculates the difference between the
+    model and the data.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        The parameters of the model of that iteration of trained.
+
+    trainer : LeastSquaresTrainer
+        The trainer that is used to train the model. It can be used to access
+        the data and to solve the ode system.
+
+    Returns
+    -------
+    np.ndarray
+        The difference between the model and the data. The target of the
+        least squares method is to minimize this difference.
+    Notes
+    -----
+    Im not sure if i should be using L2 norm or L1 norm here to calculate the difference.
+    I think that L2 norm is better because it is more sensitive to outliers.
+    """
+    trainer.model.set_train_params_from_list(x)
+    y_pred = trainer.calculate_curves()
+    diff = trainer.model.train_data - y_pred
+    return diff.flatten()
