@@ -10,6 +10,28 @@ from sirpy.utils.attrDict import AttrDict
 
 
 class LeastSquaresTrainer(AbstractTrainer):
+    """
+    Trains a model by minimizing the sum of squares of the residuals.
+
+    Parameters
+    ----------
+    residual_fun : callable
+        Function that computes the residuals. It must have the signature
+        ``residual_fun(x: np.ndarray, trainer: LeastSquaresTrainer)``, where ``x`` is the current
+        value of the independent variable and ``trainer`` is the trainer object.
+
+    Attributes
+    ----------
+    results : least_squares
+        The results of the optimization.
+    param_attr_dict : AttrDict
+        A AttrDict with the model's parameters. (AttrDict are accessed by dot notation)
+
+    Notes
+    -----
+    Inherits all parameters and attributes from AbstractTrainer.
+    """
+
     def __init__(self,
                  model: AbstractModel,
                  residual_fun: Callable = None,
@@ -23,13 +45,29 @@ class LeastSquaresTrainer(AbstractTrainer):
             **self.model.static_params
         )
 
-    def update_param_attr_dict(self):
+    def update_param_attr_dict(self) -> None:
+        """
+        Updates the parameters of the model in the AttrDict.
+        #TODO: Check if this fun is expensive and really necessary
+        """
         self.param_attr_dict = AttrDict(
             **self.model.train_params,
             **self.model.static_params
         )
 
     def train(self, **kwargs: Any):
+        """
+        Trains the model by minimizing the sum of squares of the residuals.
+        Parameters
+        ----------
+        kwargs : Any
+            Keyword arguments to be passed to the ``least_squares`` function.
+
+        Returns
+        -------
+        least_squares
+            The results of the optimization.
+        """
         self.results = least_squares(
             self.residual_fun,
             self.model.get_train_params_as_list(),
@@ -40,19 +78,52 @@ class LeastSquaresTrainer(AbstractTrainer):
         return self.results
 
     # Asume que y está ordenado según el orden de states
-    def compute_gradients(self, t, y):
+    def compute_gradients(self, t : float, y: np.ndarray) -> np.ndarray:
+        """
+        Computes the gradients of the model's states.
+        Parameters
+        ----------
+        t : float
+            The current time.
+        y : np.ndarray
+            The current values of the states.
+
+        Returns
+        -------
+        np.ndarray
+            The gradients of the states.
+
+        Notes
+        -----
+        This function assumes that the states in y array are ordered in the same way as the
+        ``self.model.states`` list.
+        """
         self.update_param_attr_dict()
         # if array is 1D, make it 2D
         if len(y.shape) == 1:
             y = y.reshape(-1, 1)
         y = AttrDict(**{i: y[j, :] for j, i in enumerate(self.model.states.keys())})
         lambda_vector = self.lambda_dict.values()
+        # TODO: Check if this is the best way to do this? Maybe its too slow
         gradient = [f(t, y, self.param_attr_dict) for f in lambda_vector]
         # make array from gradient
         gradient = np.array(gradient)
         return gradient
 
     def solve_ode_system(self, **kwargs):
+        """
+        Uses the ``solve_ivp`` function to solve the ODE system.
+
+        Parameters
+        ----------
+        kwargs
+            Keyword arguments to be passed to the ``solve_ivp`` function.
+
+        Returns
+        -------
+        np.ndarray # TODO: Check this
+            The results of the ODE system.
+        """
         return solve_ivp(
             self.compute_gradients,
             self.model.get_param("time_space"),
@@ -63,9 +134,29 @@ class LeastSquaresTrainer(AbstractTrainer):
         )
 
     def calculate_curves(self):
+        """
+        Calculates the curve of all state the model.
+
+        Returns
+        -------
+        np.ndarray
+            The curves of the states. #TODO: Check this
+        """
         return self.solve_ode_system().y.T
 
     def calculate_test_curves(self, **kwargs) -> np.ndarray:
+        """
+        Calculates the curve of all state the model for the test data.
+        Parameters
+        ----------
+        kwargs: Any
+            Keyword arguments to be passed to the ``solve_ivp`` function.
+
+        Returns
+        -------
+        np.ndarray
+            The curves of the states. #TODO: Check this
+        """
         return solve_ivp(
             self.compute_gradients,
             self.model.get_param("test_time_space"),

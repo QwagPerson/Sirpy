@@ -1,5 +1,17 @@
-# make a dictionary whose keys can be accessed like dict.key
 class AttrDict:
+    """
+    A simple dictionary that is accessible by dot notation
+
+    Examples
+    --------
+        >>> d = AttrDict()
+        >>> d['a'] = 1
+        >>> d.a
+        1
+        >>> d.a = 2
+        >>> d['a']
+        2
+    """
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
