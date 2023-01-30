@@ -68,12 +68,13 @@ class LeastSquaresTrainer(AbstractTrainer):
         least_squares
             The results of the optimization.
         """
-        self.results = least_squares(
-            self.residual_fun,
-            self.model.get_train_params_as_list(),
-            args=[self],
-            **kwargs
-        )
+        if not self.model.trained:
+            self.results = least_squares(
+                self.residual_fun,
+                self.model.get_train_params_as_list(),
+                args=[self],
+                **kwargs
+            )
         self.model.trained = True
         return self.results
 
@@ -124,6 +125,20 @@ class LeastSquaresTrainer(AbstractTrainer):
         np.ndarray # TODO: Check this
             The results of the ODE system.
         """
+        res = solve_ivp(
+            self.compute_gradients,
+            self.model.get_param("time_space"),
+            self.model.get_param("initial_condition"),
+            vectorized=True,
+            t_eval=self.model.get_param("time_range"),
+            **kwargs
+        )
+        if not res.success:
+            raise RuntimeError(f"ODE system could not be solved.\n"
+                               f"Message: {res.message}\n"
+                               f"Status: {res.status}\n"
+                               f"Check if the model is well defined and try another starting point.\n"
+                               "Good luck! :D")
         return solve_ivp(
             self.compute_gradients,
             self.model.get_param("time_space"),

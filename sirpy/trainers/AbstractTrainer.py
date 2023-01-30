@@ -90,7 +90,7 @@ class AbstractTrainer(ABC):
         plt.Axes
             The axes of the generated plot.
         """
-        return pd.DataFrame(self.calculate_curves(), columns=list(self.model.states.keys())).plot()
+        return pd.DataFrame(self.calculate_curves(), columns=list(self.model.states.keys())).plot(title=self.model.name)
 
     def plot_train_curves(self) -> None:
         """Make plots of the train curves and the calculated curves. Used to compare the results of the training process.
