@@ -1,9 +1,16 @@
 from typing import Any
+
+import pymc as pm
 import sunode.wrappers.as_pytensor
+
 from AbstractTrainer import AbstractTrainer
 from abstractModel import AbstractModel
-import pymc as pm
 
+
+# Since this is a WIP i have not documented everything
+# The idea is to have a trainer that uses bayesian inference to train the model
+# The trainer will use pymc to do the inference and sunode to solve the ode system
+# The trainer will have a bayesian model representation of the model
 
 class DistributionParameter:
     def __init__(self, name: str, distribution: pm.distributions, *args: Any, **kwargs: Any) -> None:

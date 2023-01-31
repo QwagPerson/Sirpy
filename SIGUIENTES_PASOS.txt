@@ -1,0 +1,23 @@
+TODO
+Features
+1. Terminar de añadir tests de las funciones existentes y arreglar errores que salgan
+2. Añadir un Trainer que permita usar inferencia bayesiana para entrenar los modelos
+3. Testear ese Trainer
+4. Crear objetos metricas que permitan evaluar los modelos en ves de las funciones que hay ahora
+5. Añadir warnings y verificaciones de errores comunes
+6. Añadir cotas en la descripción de los modelos (Actualmente se puede hacer poniendo un parametro como
+el resultado de una funcion acotada. Estilo `lambda x: x**2 if x > 0 else 0`)
+7. Testear y documentar TODO
+8. Añadir el paquete a Conda (PyPi no se puede porque se depende de paquetes solo disponibles en conda forge)
+
+____
+Cosas computinas que me hubiera gustado hacer pero no tengo tiempo
+1. Añadir un sistema de logging para que se puedan ver los pasos que se van haciendo en el entrenamiento
+2. Añadir un sistema de callbacks para que se puedan hacer cosas como guardar checkpoints, hacer early stopping, etc
+3. Insertar el desarollo de esta libreria en un pipeline de CI/CD para que se puedan hacer releases automaticos
+4. Añadir un sistema de guardado de modelos para que se puedan guardar y cargar modelos entrenados
+5. Crear la documentacion de la libreria en readthedocs
+
+Cualquier duda sientete libre de preguntar.
+Mi correo personal es gsantelicesn2@gmail.com
+

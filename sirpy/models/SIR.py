@@ -42,6 +42,9 @@ class SIR(AbstractModel):
     sizes : list
         A list of the sizes of the train parameters. It is used to reshape the parameters after training.
 
+    Notes
+    -----
+    This can be used as a template for creating new models.
 
     """
     def __init__(self, name: str, hyper_params: dict, train_params: dict, static_params: dict, *args: Any,
